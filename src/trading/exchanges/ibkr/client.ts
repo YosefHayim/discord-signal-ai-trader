@@ -1,5 +1,8 @@
 import { IBApi, EventName, Contract, Order, OrderAction, OrderType, SecType, OrderStatus, ErrorCode } from '@stoqey/ib';
 import { createLogger } from '../../../utils/logger.js';
+import { retry } from '../../../utils/retry.js';
+import { getErrorMessage } from '../../../utils/errors.js';
+import { TIMEOUTS, RETRY_CONFIG } from '../../../config/constants.js';
 import type { IBKRConfig, IBKROrderResult, IBKRPosition } from './types.js';
 
 const logger = createLogger('ibkr');
@@ -81,7 +84,7 @@ function setupEventHandlers(): void {
   });
 }
 
-export async function connectIBKR(): Promise<void> {
+async function connectIBKRInternal(): Promise<void> {
   if (!ib) {
     throw new Error('IBKR not initialized. Call initializeIBKR first.');
   }
@@ -92,11 +95,11 @@ export async function connectIBKR(): Promise<void> {
   }
 
   logger.info('Connecting to IBKR...');
-  
+
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       reject(new Error('IBKR connection timeout'));
-    }, 10000);
+    }, TIMEOUTS.IBKR_CONNECTION_MS);
 
     ib!.once(EventName.connected, () => {
       clearTimeout(timeout);
@@ -112,6 +115,13 @@ export async function connectIBKR(): Promise<void> {
   });
 }
 
+export async function connectIBKR(): Promise<void> {
+  return retry(connectIBKRInternal, {
+    maxAttempts: RETRY_CONFIG.MAX_ATTEMPTS,
+    retryableErrors: isIBKRRetryableError,
+  });
+}
+
 function createStockContract(symbol: string): Contract {
   return {
     symbol: symbol.toUpperCase(),
@@ -121,11 +131,21 @@ function createStockContract(symbol: string): Contract {
   };
 }
 
+function isIBKRRetryableError(error: Error): boolean {
+  const message = error.message.toLowerCase();
+  return (
+    message.includes('timeout') ||
+    message.includes('connection') ||
+    message.includes('not connected') ||
+    message.includes('socket')
+  );
+}
+
 function getNextOrderId(): number {
   return nextOrderId++;
 }
 
-export async function placeMarketOrder(
+async function placeMarketOrderInternal(
   symbol: string,
   action: 'BUY' | 'SELL',
   quantity: number
@@ -136,7 +156,7 @@ export async function placeMarketOrder(
 
   const orderId = getNextOrderId();
   const contract = createStockContract(symbol);
-  
+
   const order: Order = {
     orderId,
     action: action === 'BUY' ? OrderAction.BUY : OrderAction.SELL,
@@ -149,8 +169,9 @@ export async function placeMarketOrder(
 
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
+      ib!.off(EventName.orderStatus, statusHandler);
       reject(new Error('Order timeout'));
-    }, 30000);
+    }, TIMEOUTS.IBKR_ORDER_MS);
 
     const statusHandler = (
       statusOrderId: number,
@@ -183,6 +204,20 @@ export async function placeMarketOrder(
     ib!.on(EventName.orderStatus, statusHandler);
     ib!.placeOrder(orderId, contract, order);
   });
+}
+
+export async function placeMarketOrder(
+  symbol: string,
+  action: 'BUY' | 'SELL',
+  quantity: number
+): Promise<IBKROrderResult> {
+  return retry(
+    () => placeMarketOrderInternal(symbol, action, quantity),
+    {
+      maxAttempts: RETRY_CONFIG.MAX_ATTEMPTS,
+      retryableErrors: isIBKRRetryableError,
+    }
+  );
 }
 
 export async function placeLimitOrder(

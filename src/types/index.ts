@@ -3,3 +3,4 @@ export * from './exchange.js';
 export * from './signal.js';
 export * from './trade.js';
 export * from './position.js';
+export * from './validation.js';

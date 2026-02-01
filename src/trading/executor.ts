@@ -1,4 +1,5 @@
 import { createLogger } from '../utils/logger.js';
+import { getErrorMessage } from '../utils/errors.js';
 import { routeSignal, type RouteDecision } from './router.js';
 import * as binance from './exchanges/binance/client.js';
 import * as ibkr from './exchanges/ibkr/client.js';
@@ -19,6 +20,7 @@ import {
   TradeStatus,
   OrderSide,
   OrderType,
+  validateParsedSignal,
   type Signal,
   type ParsedSignal,
   type Trade,
@@ -131,7 +133,7 @@ async function executeBinanceTrade(
         createdAt: new Date(),
       });
     } catch (err) {
-      logger.error('Failed to place stop loss', { error: err instanceof Error ? err.message : 'Unknown' });
+      logger.error('Failed to place stop loss', { error: getErrorMessage(err) });
     }
   }
 
@@ -154,7 +156,7 @@ async function executeBinanceTrade(
         createdAt: new Date(),
       });
     } catch (err) {
-      logger.error('Failed to place take profit', { error: err instanceof Error ? err.message : 'Unknown' });
+      logger.error('Failed to place take profit', { error: getErrorMessage(err) });
     }
   }
 
@@ -245,7 +247,7 @@ async function executeIBKRTrade(
         createdAt: new Date(),
       });
     } catch (err) {
-      logger.error('Failed to place IBKR stop loss', { error: err instanceof Error ? err.message : 'Unknown' });
+      logger.error('Failed to place IBKR stop loss', { error: getErrorMessage(err) });
     }
   }
 
@@ -316,20 +318,22 @@ export async function executeSignal(signal: Signal, parsed: ParsedSignal): Promi
   });
 
   try {
-    await notifySignalReceived(parsed, signal.source);
+    const validatedSignal = validateParsedSignal(parsed);
+    
+    await notifySignalReceived(validatedSignal, signal.source);
 
-    if (parsed.confidence < config.confidenceThreshold) {
+    if (validatedSignal.confidence < config.confidenceThreshold) {
       logger.info('Signal below confidence threshold, skipping', {
-        confidence: parsed.confidence,
+        confidence: validatedSignal.confidence,
         threshold: config.confidenceThreshold,
       });
-      await notifyLowConfidence(parsed, config.confidenceThreshold);
+      await notifyLowConfidence(validatedSignal, config.confidenceThreshold);
       return;
     }
 
-    const route = routeSignal(parsed);
+    const route = routeSignal(validatedSignal);
 
-    const positionSide = getPositionSide(parsed.action);
+    const positionSide = getPositionSide(validatedSignal.action);
     if (!positionManager.canOpenPosition(route.symbol, positionSide)) {
       logger.warn('Position already exists, skipping', {
         symbol: route.symbol,
@@ -343,7 +347,7 @@ export async function executeSignal(signal: Signal, parsed: ParsedSignal): Promi
     }
 
     if (config.simulationMode) {
-      await executeSimulatedTrade(signal, parsed, route);
+      await executeSimulatedTrade(signal, validatedSignal, route);
       return;
     }
 
@@ -353,12 +357,12 @@ export async function executeSignal(signal: Signal, parsed: ParsedSignal): Promi
       if (!binance.isBinanceInitialized()) {
         throw new Error('Binance not initialized');
       }
-      trade = await executeBinanceTrade(signal, parsed, route);
+      trade = await executeBinanceTrade(signal, validatedSignal, route);
     } else if (route.exchange === Exchange.IBKR) {
       if (!ibkr.isIBKRConnected()) {
         throw new Error('IBKR not connected');
       }
-      trade = await executeIBKRTrade(signal, parsed, route);
+      trade = await executeIBKRTrade(signal, validatedSignal, route);
     } else {
       throw new Error(`Unsupported exchange: ${route.exchange}`);
     }
@@ -372,7 +376,7 @@ export async function executeSignal(signal: Signal, parsed: ParsedSignal): Promi
     await notifyTradeExecuted(trade);
 
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
+    const message = getErrorMessage(error);
     logger.error('Trade execution failed', { 
       signalId: signal.id, 
       error: message,

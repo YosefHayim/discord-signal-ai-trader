@@ -78,3 +78,4 @@ export function resetConfig(): void {
 }
 
 export { type Config } from './schema.js';
+export * from './constants.js';

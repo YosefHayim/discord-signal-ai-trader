@@ -1,8 +1,9 @@
 import { getConfig } from './config/index.js';
 import { createLogger } from './utils/logger.js';
+import { getErrorMessage, getErrorStack } from './utils/errors.js';
 import { setupShutdownHooks, registerShutdownHandler } from './utils/shutdown.js';
 import { connectDatabase, disconnectDatabase, isDatabaseConnected } from './database/connection.js';
-import { createRedisConnection, closeRedisConnection } from './signals/queue/connection.js';
+import { createRedisConnection, getRedisConnection, closeRedisConnection } from './signals/queue/connection.js';
 import { createSignalQueue, closeSignalQueue, getQueueStats } from './signals/queue/signal-queue.js';
 import { 
   startSignalProcessor, 
@@ -43,7 +44,11 @@ async function initializeRedis(): Promise<void> {
 
 async function initializeSignalProcessor(): Promise<void> {
   const config = getConfig();
-  const redis = createRedisConnection(config.redis.url);
+  const redis = getRedisConnection();
+  
+  if (!redis) {
+    throw new Error('Redis not initialized. Call initializeRedis first.');
+  }
   
   setConfidenceThreshold(config.trading.confidenceThreshold);
   setExecuteCallback(async (signal: Signal, parsed: ParsedSignal) => {
@@ -125,7 +130,7 @@ async function initializeIBKRExchange(): Promise<void> {
     await connectIBKR();
   } catch (error) {
     logger.warn('IBKR connection failed, stock trading disabled', {
-      error: error instanceof Error ? error.message : 'Unknown',
+      error: getErrorMessage(error),
     });
   }
   
@@ -204,8 +209,8 @@ async function main(): Promise<void> {
 
 main().catch((error) => {
   logger.error('Fatal error during startup', { 
-    error: error instanceof Error ? error.message : 'Unknown',
-    stack: error instanceof Error ? error.stack : undefined,
+    error: getErrorMessage(error),
+    stack: getErrorStack(error),
   });
   process.exit(1);
 });
