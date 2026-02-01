@@ -1,5 +1,33 @@
 {
+  "name": "discord-signal-ai-trader",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
-    "glob": "^13.0.0"
+    "@binance/connector": "^3.6.1",
+    "@google/generative-ai": "^0.21.0",
+    "@stoqey/ib": "^1.5.3",
+    "bullmq": "^5.7.8",
+    "discord.js": "^14.15.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "glob": "^13.0.0",
+    "grammy": "^1.21.1",
+    "ioredis": "^5.4.1",
+    "mongoose": "^8.4.0",
+    "winston": "^3.13.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.12",
+    "tsx": "^4.11.0",
+    "typescript": "^5.4.5"
   }
 }
