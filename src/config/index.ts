@@ -41,8 +41,8 @@ function loadConfig(): Config {
       botToken: process.env.TELEGRAM_BOT_TOKEN || '',
       chatId: process.env.TELEGRAM_CHAT_ID || '',
     },
-    mongo: {
-      uri: process.env.MONGODB_URI || '',
+    database: {
+      url: process.env.DATABASE_URL || '',
     },
     redis: {
       url: process.env.REDIS_URL || 'redis://localhost:6379',

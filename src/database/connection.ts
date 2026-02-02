@@ -1,39 +1,34 @@
-import mongoose from 'mongoose';
+import { neon, type NeonQueryFunction } from '@neondatabase/serverless';
+import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import { createLogger } from '../utils/logger.js';
+import * as schema from './schema.js';
 
 const logger = createLogger('database');
 
+let db: NeonHttpDatabase<typeof schema> | null = null;
+let sql: NeonQueryFunction<false, false> | null = null;
 let isConnected = false;
 
-export async function connectDatabase(uri: string): Promise<void> {
-  if (isConnected) {
-    logger.debug('Already connected to MongoDB');
+export async function connectDatabase(url: string): Promise<void> {
+  if (isConnected && db) {
+    logger.debug('Already connected to Neon database');
     return;
   }
 
   try {
-    logger.info('Connecting to MongoDB...');
+    logger.info('Connecting to Neon database...');
     
-    await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-    });
-
+    sql = neon(url);
+    db = drizzle(sql, { schema });
+    
+    await sql`SELECT 1`;
+    
     isConnected = true;
-    logger.info('Connected to MongoDB successfully');
-
-    mongoose.connection.on('error', (err) => {
-      logger.error('MongoDB connection error', { error: err.message });
-    });
-
-    mongoose.connection.on('disconnected', () => {
-      isConnected = false;
-      logger.warn('MongoDB disconnected');
-    });
+    logger.info('Connected to Neon database successfully');
 
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    logger.error('Failed to connect to MongoDB', { error: message });
+    logger.error('Failed to connect to Neon database', { error: message });
     throw error;
   }
 }
@@ -41,17 +36,26 @@ export async function connectDatabase(uri: string): Promise<void> {
 export async function disconnectDatabase(): Promise<void> {
   if (!isConnected) return;
   
-  try {
-    await mongoose.disconnect();
-    isConnected = false;
-    logger.info('Disconnected from MongoDB');
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    logger.error('Error disconnecting from MongoDB', { error: message });
-    throw error;
-  }
+  db = null;
+  sql = null;
+  isConnected = false;
+  logger.info('Disconnected from Neon database');
 }
 
 export function isDatabaseConnected(): boolean {
-  return isConnected && mongoose.connection.readyState === 1;
+  return isConnected && db !== null;
+}
+
+export function getDb(): NeonHttpDatabase<typeof schema> {
+  if (!db) {
+    throw new Error('Database not connected. Call connectDatabase() first.');
+  }
+  return db;
+}
+
+export function getSql(): NeonQueryFunction<false, false> {
+  if (!sql) {
+    throw new Error('Database not connected. Call connectDatabase() first.');
+  }
+  return sql;
 }

@@ -32,9 +32,8 @@ const telegramSchema = z.object({
   chatId: z.string().min(1, 'TELEGRAM_CHAT_ID is required'),
 });
 
-// MongoDB configuration
-const mongoSchema = z.object({
-  uri: z.string().min(1, 'MONGODB_URI is required'),
+const databaseSchema = z.object({
+  url: z.string().min(1, 'DATABASE_URL is required'),
 });
 
 // Redis configuration
@@ -63,7 +62,7 @@ export const configSchema = z.object({
   ibkr: ibkrSchema,
   gemini: geminiSchema,
   telegram: telegramSchema,
-  mongo: mongoSchema,
+  database: databaseSchema,
   redis: redisSchema,
   trading: tradingSchema,
   server: serverSchema,

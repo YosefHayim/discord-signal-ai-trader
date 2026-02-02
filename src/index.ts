@@ -21,6 +21,7 @@ import { initializeIBKR, connectIBKR, disconnectIBKR, isIBKRConnected } from './
 import { configureExecutor, executeSignal } from './trading/executor.js';
 import * as positionManager from './trading/position-manager.js';
 import { addSignalToQueue } from './signals/queue/signal-queue.js';
+import { startApiServer, stopApiServer } from './api/index.js';
 import type { RawSignal, Signal, ParsedSignal, Position } from './types/index.js';
 import type { BotStatus } from './telegram/commands/status.js';
 
@@ -28,7 +29,7 @@ const logger = createLogger('main');
 
 async function initializeDatabase(): Promise<void> {
   const config = getConfig();
-  await connectDatabase(config.mongo.uri);
+  await connectDatabase(config.database.url);
   registerShutdownHandler('database', disconnectDatabase);
 }
 
@@ -193,6 +194,10 @@ async function main(): Promise<void> {
 
   await initializeDiscord();
   logger.info('Discord bot connected');
+
+  startApiServer(config.server.port);
+  registerShutdownHandler('api-server', stopApiServer);
+  logger.info('API server started', { port: config.server.port });
 
   logger.info('Discord Signal AI Trader is running', {
     mode: config.trading.simulationMode ? 'SIMULATION' : 'LIVE',

@@ -5,28 +5,42 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "dev:web": "npm run dev --prefix web",
     "build": "tsc",
+    "build:web": "npm run build --prefix web",
+    "build:all": "npm run build && npm run build:web",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:web": "npm run typecheck --prefix web || echo 'Typecheck via build'",
+    "typecheck:all": "npm run typecheck && npm run build:web",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@binance/connector": "^3.6.1",
     "@google/generative-ai": "^0.21.0",
+    "@neondatabase/serverless": "^1.0.2",
     "@stoqey/ib": "^1.5.3",
     "bullmq": "^5.7.8",
+    "cors": "^2.8.6",
     "discord.js": "^14.15.3",
     "dotenv": "^16.4.5",
+    "drizzle-orm": "^0.45.1",
     "express": "^4.19.2",
     "glob": "^13.0.0",
     "grammy": "^1.21.1",
     "ioredis": "^5.4.1",
-    "mongoose": "^8.4.0",
+    "socket.io": "^4.8.3",
     "winston": "^3.13.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^4.17.21",
     "@types/node": "^20.12.12",
+    "drizzle-kit": "^0.31.8",
     "tsx": "^4.11.0",
     "typescript": "^5.4.5"
   }
