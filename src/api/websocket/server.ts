@@ -8,6 +8,7 @@ import { isProcessingPaused } from '../../signals/processor.js';
 const logger = createLogger('websocket');
 
 let io: SocketIOServer | null = null;
+let updateInterval: ReturnType<typeof setInterval> | null = null;
 
 export function initializeWebSocket(httpServer: HTTPServer): SocketIOServer {
   io = new SocketIOServer(httpServer, {
@@ -47,7 +48,11 @@ export function initializeWebSocket(httpServer: HTTPServer): SocketIOServer {
 }
 
 function startPeriodicUpdates(): void {
-  setInterval(async () => {
+  if (updateInterval) {
+    clearInterval(updateInterval);
+  }
+
+  updateInterval = setInterval(async () => {
     if (!io) return;
 
     const positions = positionManager.getAllOpenPositions();
@@ -101,5 +106,10 @@ export function closeWebSocket(): void {
     io.close();
     io = null;
     logger.info('WebSocket server closed');
+  }
+
+  if (updateInterval) {
+    clearInterval(updateInterval);
+    updateInterval = null;
   }
 }

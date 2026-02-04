@@ -13,7 +13,7 @@ export function Header({ onMenuClick, isConnected, isPaused, onTogglePause }: He
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 backdrop-blur px-4 lg:px-6">
       <div className="flex items-center gap-4">
-        <button onClick={onMenuClick} className="lg:hidden">
+        <button type="button" onClick={onMenuClick} className="lg:hidden" aria-label="Open sidebar">
           <Menu className="h-6 w-6" />
         </button>
         <h2 className="text-lg font-semibold hidden sm:block">Discord Signal AI Trader</h2>
@@ -39,6 +39,7 @@ export function Header({ onMenuClick, isConnected, isPaused, onTogglePause }: He
           size="sm"
           onClick={onTogglePause}
           className={cn('gap-2')}
+          aria-label={isPaused ? 'Resume processing' : 'Pause processing'}
         >
           {isPaused ? (
             <>

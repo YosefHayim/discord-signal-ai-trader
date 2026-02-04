@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatPrice(price: number, decimals = 2): string {
-  return price.toLocaleString('en-US', {
+  return price.toLocaleString(undefined, {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
@@ -18,7 +18,7 @@ export function formatPercentage(value: number): string {
 }
 
 export function formatDate(date: string | Date): string {
-  return new Date(date).toLocaleString('en-US', {
+  return new Date(date).toLocaleString(undefined, {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -27,7 +27,7 @@ export function formatDate(date: string | Date): string {
 }
 
 export function formatDateFull(date: string | Date): string {
-  return new Date(date).toLocaleString('en-US', {
+  return new Date(date).toLocaleString(undefined, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',

@@ -32,6 +32,13 @@
 
 ## Completed Work
 
+### 2026-02-04
+
+- [x] Reviewed UI/UX and codebase for bugs/risks; documented findings and improvement recommendations
+- [x] Fixed positions history ordering/filtering; aligned API/UI query parameters
+- [x] Cleared WebSocket update interval on shutdown to prevent orphaned timers
+- [x] Addressed dashboard unused query and multiple UI accessibility gaps
+
 ### 2026-02-02
 
 - [x] Scaffolded React frontend in `/web` folder using Vite + React + TypeScript
@@ -156,6 +163,8 @@ discord-signal-ai-trader/
 ## Session Notes
 
 _Last session ended with: Completed React dashboard UI with all pages (Dashboard, Signals, Positions, Trades, Settings). Frontend builds successfully and is ready for use._
+
+_Current session: Implemented audit fixes across backend (positions history + websocket timer) and frontend (a11y labels, URL-synced filters, destructive confirmation, locale-aware formatting, unused query removal)._
 
 _Next session should start with: To run the full stack:_
 1. Start backend: `npm run dev` (runs on port 3000)

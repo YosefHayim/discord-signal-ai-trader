@@ -123,7 +123,8 @@ export const positionRepository = {
   async findMany(
     filter: { status?: PositionStatus; symbol?: string } = {},
     limit: number = 50,
-    offset: number = 0
+    offset: number = 0,
+    orderBy: 'openedAt' | 'closedAt' = 'openedAt'
   ): Promise<Position[]> {
     const db = getDb();
     const conditions = [];
@@ -134,10 +135,12 @@ export const positionRepository = {
       conditions.push(eq(positions.symbol, filter.symbol));
     }
     
+    const orderByField = orderBy === 'closedAt' ? positions.closedAt : positions.openedAt;
+
     const rows = await db.select()
       .from(positions)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(desc(positions.openedAt))
+      .orderBy(desc(orderByField))
       .offset(offset)
       .limit(limit);
     

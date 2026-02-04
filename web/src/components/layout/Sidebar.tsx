@@ -19,7 +19,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   return (
     <>
       {isOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={onClose} />
+        <button
+          type="button"
+          aria-label="Close sidebar"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={onClose}
+        />
       )}
       
       <aside
@@ -30,7 +35,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       >
         <div className="flex h-16 items-center justify-between px-6 border-b">
           <h1 className="text-xl font-bold text-primary">Signal Trader</h1>
-          <button onClick={onClose} className="lg:hidden">
+          <button type="button" onClick={onClose} className="lg:hidden" aria-label="Close sidebar">
             <X className="h-5 w-5" />
           </button>
         </div>

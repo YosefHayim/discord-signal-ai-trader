@@ -38,26 +38,35 @@ export function Settings() {
         <CardContent className="space-y-4">
           <div className="flex gap-2">
             <div className="relative flex-1">
+              <label htmlFor="api-key" className="sr-only">
+                API key
+              </label>
               <Input
+                id="api-key"
+                name="apiKey"
                 type={showKey ? 'text' : 'password'}
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder="Enter your API key"
+                autoComplete="off"
+                aria-describedby="api-key-help"
               />
               <button
                 type="button"
                 onClick={() => setShowKey(!showKey)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label={showKey ? 'Hide API key' : 'Show API key'}
+                aria-pressed={showKey}
               >
                 {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
             <Button onClick={handleSave}>
               <Save className="mr-2 h-4 w-4" />
-              {saved ? 'Saved!' : 'Save'}
+              {saved ? 'API key saved' : 'Save API key'}
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p id="api-key-help" className="text-sm text-muted-foreground">
             The API key is stored locally in your browser and sent with each API request.
           </p>
         </CardContent>

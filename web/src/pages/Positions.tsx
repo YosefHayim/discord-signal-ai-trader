@@ -32,7 +32,7 @@ export function Positions() {
 
   const { data: historyData } = useQuery({
     queryKey: ['positionHistory'],
-    queryFn: () => api.getPositionHistory({ limit: 10 }),
+    queryFn: () => api.getPositionHistory({ limit: 5, status: 'closed', orderBy: 'closedAt' }),
   });
 
   useEffect(() => {
@@ -63,6 +63,9 @@ export function Positions() {
   });
 
   const handleClosePosition = (symbol: string, side: PositionSide) => {
+    const confirmed = window.confirm(`Close ${symbol} ${side} position?`);
+    if (!confirmed) return;
+
     setClosingPosition(`${symbol}-${side}`);
     closePositionMutation.mutate({ symbol, side });
   };
@@ -193,8 +196,6 @@ export function Positions() {
               </TableHeader>
               <TableBody>
                 {historyData.data
-                  .filter((p) => p.status === 'closed')
-                  .slice(0, 5)
                   .map((position) => (
                     <TableRow key={position.id}>
                       <TableCell className="whitespace-nowrap">

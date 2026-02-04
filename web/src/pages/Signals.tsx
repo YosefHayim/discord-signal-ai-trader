@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Signal as SignalIcon, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Card,
   CardContent,
@@ -23,8 +24,60 @@ import { formatDate, formatPrice, cn } from '@/lib/utils';
 const PAGE_SIZE = 20;
 
 export function Signals() {
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [page, setPage] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState<string>(() => {
+    const fromUrl = searchParams.get('status');
+    return fromUrl && Object.values(SignalStatus).includes(fromUrl as SignalStatus)
+      ? fromUrl
+      : '';
+  });
+  const [page, setPage] = useState(() => {
+    const fromUrl = Number(searchParams.get('page') ?? '0');
+    return Number.isFinite(fromUrl) && fromUrl > 0 ? fromUrl : 0;
+  });
+
+  useEffect(() => {
+    const urlStatus = searchParams.get('status');
+    const nextStatus =
+      urlStatus && Object.values(SignalStatus).includes(urlStatus as SignalStatus)
+        ? urlStatus
+        : '';
+    const urlPageRaw = Number(searchParams.get('page') ?? '0');
+    const nextPage = Number.isFinite(urlPageRaw) && urlPageRaw > 0 ? urlPageRaw : 0;
+
+    if (nextStatus !== statusFilter) setStatusFilter(nextStatus);
+    if (nextPage !== page) setPage(nextPage);
+  }, [searchParams, statusFilter, page]);
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    const currentStatus = searchParams.get('status') ?? '';
+    const currentPage = searchParams.get('page') ?? '';
+    const desiredPage = page > 0 ? String(page) : '';
+    let changed = false;
+
+    if (statusFilter !== currentStatus) {
+      if (statusFilter) {
+        next.set('status', statusFilter);
+      } else {
+        next.delete('status');
+      }
+      changed = true;
+    }
+
+    if (desiredPage !== currentPage) {
+      if (page > 0) {
+        next.set('page', String(page));
+      } else {
+        next.delete('page');
+      }
+      changed = true;
+    }
+
+    if (changed) {
+      setSearchParams(next, { replace: true });
+    }
+  }, [statusFilter, page, searchParams, setSearchParams]);
 
   const { data: signals, isLoading } = useQuery({
     queryKey: ['signals', statusFilter, page],
@@ -90,6 +143,7 @@ export function Signals() {
                   setPage(0);
                 }}
                 className="w-40"
+                aria-label="Filter by status"
               >
                 <option value="">All Status</option>
                 {Object.values(SignalStatus).map((status) => (
@@ -184,6 +238,7 @@ export function Signals() {
                       size="sm"
                       disabled={page === 0}
                       onClick={() => setPage((p) => p - 1)}
+                      aria-label="Previous page"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
@@ -192,6 +247,7 @@ export function Signals() {
                       size="sm"
                       disabled={page >= totalPages - 1}
                       onClick={() => setPage((p) => p + 1)}
+                      aria-label="Next page"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>

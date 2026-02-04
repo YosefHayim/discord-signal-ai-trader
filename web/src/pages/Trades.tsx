@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { History, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Card,
   CardContent,
@@ -23,9 +24,82 @@ import { formatDate, formatPrice, formatPercentage, getPnlColor, cn } from '@/li
 const PAGE_SIZE = 20;
 
 export function Trades() {
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [exchangeFilter, setExchangeFilter] = useState<string>('');
-  const [page, setPage] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState<string>(() => {
+    const fromUrl = searchParams.get('status');
+    return fromUrl && Object.values(TradeStatus).includes(fromUrl as TradeStatus)
+      ? fromUrl
+      : '';
+  });
+  const [exchangeFilter, setExchangeFilter] = useState<string>(() => {
+    const fromUrl = searchParams.get('exchange');
+    return fromUrl && Object.values(Exchange).includes(fromUrl as Exchange)
+      ? fromUrl
+      : '';
+  });
+  const [page, setPage] = useState(() => {
+    const fromUrl = Number(searchParams.get('page') ?? '0');
+    return Number.isFinite(fromUrl) && fromUrl > 0 ? fromUrl : 0;
+  });
+
+  useEffect(() => {
+    const urlStatus = searchParams.get('status');
+    const nextStatus =
+      urlStatus && Object.values(TradeStatus).includes(urlStatus as TradeStatus)
+        ? urlStatus
+        : '';
+    const urlExchange = searchParams.get('exchange');
+    const nextExchange =
+      urlExchange && Object.values(Exchange).includes(urlExchange as Exchange)
+        ? urlExchange
+        : '';
+    const urlPageRaw = Number(searchParams.get('page') ?? '0');
+    const nextPage = Number.isFinite(urlPageRaw) && urlPageRaw > 0 ? urlPageRaw : 0;
+
+    if (nextStatus !== statusFilter) setStatusFilter(nextStatus);
+    if (nextExchange !== exchangeFilter) setExchangeFilter(nextExchange);
+    if (nextPage !== page) setPage(nextPage);
+  }, [searchParams, statusFilter, exchangeFilter, page]);
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    const currentStatus = searchParams.get('status') ?? '';
+    const currentExchange = searchParams.get('exchange') ?? '';
+    const currentPage = searchParams.get('page') ?? '';
+    const desiredPage = page > 0 ? String(page) : '';
+    let changed = false;
+
+    if (statusFilter !== currentStatus) {
+      if (statusFilter) {
+        next.set('status', statusFilter);
+      } else {
+        next.delete('status');
+      }
+      changed = true;
+    }
+
+    if (exchangeFilter !== currentExchange) {
+      if (exchangeFilter) {
+        next.set('exchange', exchangeFilter);
+      } else {
+        next.delete('exchange');
+      }
+      changed = true;
+    }
+
+    if (desiredPage !== currentPage) {
+      if (page > 0) {
+        next.set('page', String(page));
+      } else {
+        next.delete('page');
+      }
+      changed = true;
+    }
+
+    if (changed) {
+      setSearchParams(next, { replace: true });
+    }
+  }, [statusFilter, exchangeFilter, page, searchParams, setSearchParams]);
 
   const { data: trades, isLoading } = useQuery({
     queryKey: ['trades', statusFilter, exchangeFilter, page],
@@ -102,6 +176,7 @@ export function Trades() {
                   setPage(0);
                 }}
                 className="w-36"
+                aria-label="Filter by status"
               >
                 <option value="">All Status</option>
                 {Object.values(TradeStatus).map((status) => (
@@ -117,6 +192,7 @@ export function Trades() {
                   setPage(0);
                 }}
                 className="w-32"
+                aria-label="Filter by exchange"
               >
                 <option value="">All Exchanges</option>
                 {Object.values(Exchange).map((exchange) => (
@@ -200,6 +276,7 @@ export function Trades() {
                       size="sm"
                       disabled={page === 0}
                       onClick={() => setPage((p) => p - 1)}
+                      aria-label="Previous page"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
@@ -208,6 +285,7 @@ export function Trades() {
                       size="sm"
                       disabled={page >= totalPages - 1}
                       onClick={() => setPage((p) => p + 1)}
+                      aria-label="Next page"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>

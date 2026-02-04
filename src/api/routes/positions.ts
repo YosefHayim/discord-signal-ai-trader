@@ -3,7 +3,7 @@ import * as positionManager from '../../trading/position-manager.js';
 import { positionRepository } from '../../database/index.js';
 import * as binance from '../../trading/exchanges/binance/client.js';
 import * as ibkr from '../../trading/exchanges/ibkr/client.js';
-import { Exchange, PositionSide } from '../../types/index.js';
+import { Exchange, PositionSide, PositionStatus } from '../../types/index.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { createLogger } from '../../utils/logger.js';
 
@@ -19,15 +19,28 @@ router.get('/', async (_req, res) => {
 });
 
 router.get('/history', async (req, res) => {
-  const { limit = '50', offset = '0' } = req.query;
+  const { limit = '50', offset = '0', status, orderBy } = req.query;
+
+  const filter: { status?: PositionStatus } = {};
+  if (status === PositionStatus.OPEN || status === PositionStatus.CLOSED) {
+    filter.status = status;
+  }
+
+  const order =
+    orderBy === 'closedAt' || orderBy === 'openedAt'
+      ? orderBy
+      : filter.status === PositionStatus.CLOSED
+        ? 'closedAt'
+        : 'openedAt';
 
   const positions = await positionRepository.findMany(
-    {},
+    filter,
     parseInt(limit as string, 10),
-    parseInt(offset as string, 10)
+    parseInt(offset as string, 10),
+    order
   );
 
-  const total = await positionRepository.count({});
+  const total = await positionRepository.count(filter);
 
   res.json({
     data: positions,

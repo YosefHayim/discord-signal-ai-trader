@@ -61,10 +61,17 @@ export const api = {
 
   getPositions: () => fetchApi<{ data: Position[]; count: number }>('/positions'),
 
-  getPositionHistory: (params?: { limit?: number; offset?: number }) => {
+  getPositionHistory: (params?: {
+    limit?: number;
+    offset?: number;
+    status?: 'open' | 'closed';
+    orderBy?: 'openedAt' | 'closedAt';
+  }) => {
     const searchParams = new URLSearchParams();
     if (params?.limit) searchParams.set('limit', params.limit.toString());
     if (params?.offset) searchParams.set('offset', params.offset.toString());
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.orderBy) searchParams.set('orderBy', params.orderBy);
     const query = searchParams.toString();
     return fetchApi<PaginatedResponse<Position>>(`/positions/history${query ? `?${query}` : ''}`);
   },
