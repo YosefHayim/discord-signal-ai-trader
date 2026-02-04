@@ -83,6 +83,12 @@ export function Dashboard() {
     refetchInterval: 30000,
   });
 
+  useQuery({
+    queryKey: ['tradeStats'],
+    queryFn: api.getTradeStats,
+    refetchInterval: 30000,
+  });
+
   useEffect(() => {
     const unsubPositions = socketManager.on<{ positions: Position[] }>('positions:update', (data) => {
       setPositions(data.positions);

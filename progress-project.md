@@ -38,6 +38,7 @@
 - [x] Fixed positions history ordering/filtering; aligned API/UI query parameters
 - [x] Cleared WebSocket update interval on shutdown to prevent orphaned timers
 - [x] Addressed dashboard unused query and multiple UI accessibility gaps
+- [x] Restored dashboard tradeStats polling per request (kept behavior unchanged)
 
 ### 2026-02-02
 
@@ -164,7 +165,7 @@ discord-signal-ai-trader/
 
 _Last session ended with: Completed React dashboard UI with all pages (Dashboard, Signals, Positions, Trades, Settings). Frontend builds successfully and is ready for use._
 
-_Current session: Implemented audit fixes across backend (positions history + websocket timer) and frontend (a11y labels, URL-synced filters, destructive confirmation, locale-aware formatting, unused query removal)._
+_Current session: Implemented audit fixes across backend (positions history + websocket timer) and frontend (a11y labels, URL-synced filters, destructive confirmation, locale-aware formatting). Restored dashboard tradeStats polling per request._
 
 _Next session should start with: To run the full stack:_
 1. Start backend: `npm run dev` (runs on port 3000)
